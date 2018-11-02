@@ -7,20 +7,52 @@ import './App.css'
 
 class BooksApp extends React.Component {
   state = {
-    books: []
+    books: [],
+    searchResults: []
   }
   render() {
     return (
       <div className="app">
         <Route exact path="/" render={() => (
-          <BookCategories books={this.state.books}></BookCategories>
+          <BookCategories onActionSelected={(book, shelf) => {
+            book.shelf = shelf
+            this.setState(state => ({
+              books: state.books.filter(bookState => bookState.id !== book.id).concat([book])
+            }))
+            BooksAPI.update(book, shelf).then((result) => {
+              console.log('Shelf Changed', result)
+            }).catch(err => console.log('There was an error', err))
+           }} books={this.state.books}></BookCategories>
         )}>
         </Route>
         <Route path="/search" render={() => (
-          <SearchBook></SearchBook>
+          <SearchBook
+            stateBooks={this.state.books}
+            searchResults={this.state.searchResults}
+            onActionSelected={(book, shelf) => {
+              book.shelf = shelf
+              this.setState(state => ({
+                books: state.books.filter(bookState => bookState.id !== book.id).concat([book])
+              }))
+              BooksAPI.update(book, shelf).then((result) => {
+                console.log('Shelf Changed', result)
+              }).catch(err => console.log('There was an error', err))
+            }}
+            onSearch={(query) => {
+            if (query.length > 2) {
+              BooksAPI.search(query.toLowerCase()).then(result => {
+                if (!result.error) {
+                  this.setState({
+                    searchResults: result
+                  })
+                }
+              })
+            }
+          }}>
+          </SearchBook>
         )}>
         </Route>
-        
+
       </div>
     )
   }
@@ -29,7 +61,6 @@ class BooksApp extends React.Component {
       this.setState({
         books
       })
-      console.log('libros', books)
     })
   }
 }
